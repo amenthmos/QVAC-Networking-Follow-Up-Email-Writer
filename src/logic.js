@@ -85,8 +85,15 @@ export async function writeFollowUp(modelId, body) {
   for await (const token of run.tokenStream) text += token;
   text = cleanText(text);
 
-  const usable = !looksUnusable(text) && isGrounded(text, topic);
-  const email = usable ? text : fallbackEmail(person, topic);
+  let usable = !looksUnusable(text) && isGrounded(text, topic);
+  let email = usable ? text : fallbackEmail(person, topic);
+  // The prompt asks the model to start with "Subject:", but a small model
+  // can drop it. Without a subject line the draft looks broken when pasted
+  // into an email client, so add a generic one rather than rejecting an
+  // otherwise-good, grounded draft outright.
+  if (usable && !/^subject:/i.test(email.trim())) {
+    email = `Subject: Great connecting with ${person}\n\n${email}`;
+  }
 
   return { person, topic, email };
 }
