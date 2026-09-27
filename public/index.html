@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QVAC Networking Follow-Up Email Writer</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: linear-gradient(160deg, #f3eefc 0%, #e5daf7 100%);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #402a63;
+    display: flex; justify-content: center; padding: 46px 20px;
+  }
+  .wrap { width: 100%; max-width: 520px; }
+  .icon { font-size: 2rem; margin-bottom: 4px; text-align: center; }
+  h1 { font-size: 1.5rem; margin: 0 0 6px; color: #6a3bc2; font-weight: 800; text-align: center; }
+  .subtitle { color: #8368a8; margin-bottom: 24px; font-size: 0.9rem; text-align: center; }
+  .card { background: #fbf9ff; border: 1px solid #dccdf5; border-radius: 16px; padding: 28px 26px; box-shadow: 0 4px 16px rgba(106,59,194,0.08); }
+  label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #402a63; }
+  input[type=text], textarea {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid #cdb6ef;
+    background: #fdfcff; color: #402a63; font-family: inherit; font-size: 1rem; margin-bottom: 18px; resize: vertical;
+  }
+  input[type=text]:focus, textarea:focus { outline: none; border-color: #6a3bc2; }
+  button.action {
+    width: 100%; padding: 13px 20px; border: none; border-radius: 10px; font-size: 1rem;
+    font-weight: 700; font-family: inherit; cursor: pointer; background: #6a3bc2; color: #fff;
+  }
+  button.action:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.action:hover:not(:disabled) { background: #572f9f; }
+  .status { margin-top: 14px; font-size: 0.85rem; color: #8368a8; min-height: 1.2em; }
+  #resultBox { margin-top: 18px; }
+  .email { background: #f4eefe; border: 1px solid #dccdf5; border-radius: 10px; padding: 16px; font-size: 0.95rem; line-height: 1.6; color: #402a63; white-space: pre-wrap; }
+  .footer-note { color: #8368a8; font-size: 0.78rem; margin-top: 20px; text-align: center; }
+  .spinner {
+    display: inline-block; width: 13px; height: 13px; border: 2px solid #dccdf5;
+    border-top-color: #6a3bc2; border-radius: 50%; animation: spin 0.8s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="icon">🤝</div>
+    <h1>Networking Follow-Up Email Writer</h1>
+    <p class="subtitle">Enter who you met and what you discussed, get a grounded follow-up draft. 100% on-device.</p>
+
+    <div class="card">
+      <label for="personInput">Who you met</label>
+      <input type="text" id="personInput" placeholder="e.g. Priya, at a design conference" />
+      <label for="topicInput">What you talked about</label>
+      <textarea id="topicInput" rows="3" placeholder="e.g. her team's shift to design systems and engineering buy-in challenges"></textarea>
+      <button class="action" id="generateBtn">Write Follow-Up</button>
+      <div class="status" id="status"></div>
+      <div id="resultBox"></div>
+    </div>
+
+    <p class="footer-note">Everything runs locally on your machine. No text ever leaves this device.</p>
+  </div>
+
+  <script>
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    const personInput = document.getElementById('personInput');
+    const topicInput = document.getElementById('topicInput');
+    const generateBtn = document.getElementById('generateBtn');
+    const status = document.getElementById('status');
+    const resultBox = document.getElementById('resultBox');
+
+    async function generate() {
+      const person = personInput.value.trim();
+      const topic = topicInput.value.trim();
+      if (!person || !topic) return;
+      generateBtn.disabled = true;
+      resultBox.innerHTML = '';
+      status.innerHTML = '<span class="spinner"></span>Drafting your follow-up...';
+
+      try {
+        const res = await fetch('/api/followup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ person, topic }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        status.textContent = '';
+        resultBox.innerHTML = `<div class="email">${escapeHtml(data.email)}</div>`;
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+      } finally {
+        generateBtn.disabled = false;
+      }
+    }
+
+    generateBtn.addEventListener('click', generate);
+  </script>
+</body>
+</html>
